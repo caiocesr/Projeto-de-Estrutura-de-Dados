@@ -1,0 +1,59 @@
+package view.estruturas;
+
+import estruturas.Fila;
+import view.Simulador;
+import view.caminhoes.CaminhaoGrande;
+import view.caminhoes.CaminhaoPequeno;
+
+public class EstacaoTransferencia {
+    private int id;
+    private Fila<CaminhaoPequeno> filaCaminhoes;
+    private CaminhaoGrande caminhaoGrandeAtual;
+
+    public EstacaoTransferencia(int id) {
+        this.id = id;
+        this.filaCaminhoes = new Fila<>();
+        this.caminhaoGrandeAtual = null;
+    }
+
+    public void adicionarCaminhaoPequeno(CaminhaoPequeno caminhao) {
+        filaCaminhoes.enfileirar(caminhao);
+    }
+
+    public void processar(Simulador controller) {
+        if (caminhaoGrandeAtual == null) {
+            caminhaoGrandeAtual = new CaminhaoGrande(id, 3);
+            controller.registrarNovoCaminhaoGrande();
+        } else {
+            caminhaoGrandeAtual.incrementarEspera();
+        }
+
+        if (!filaCaminhoes.estaVazia()) {
+            CaminhaoPequeno pequeno = filaCaminhoes.desenfileirar();
+            caminhaoGrandeAtual.carregar(pequeno.getCargaAtual());
+            controller.registrarTempoEspera(caminhaoGrandeAtual.getTempoEspera());
+            pequeno.descarregar();
+        }
+
+        if (caminhaoGrandeAtual.passouTolerancia() || caminhaoGrandeAtual.estaCheio()) {
+            System.out.println("Caminhão Grande #" + caminhaoGrandeAtual.getId() + " partiu para o aterro com "
+                    + caminhaoGrandeAtual.getCargaAtual() + "kg de lixo.");
+            controller.registrarDescarregamento();
+            caminhaoGrandeAtual = null;
+        }
+    }
+
+
+    public int getId() {
+        return id;
+    }
+
+    public boolean temFila() {
+        return !filaCaminhoes.estaVazia();
+    }
+
+    @Override
+    public String toString() {
+        return "Estação #" + id + " | Fila de Caminhões Pequenos: " + filaCaminhoes.tamanho();
+    }
+}
