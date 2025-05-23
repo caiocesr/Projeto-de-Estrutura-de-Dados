@@ -1,0 +1,51 @@
+package estruturas;
+import estruturas.No;
+
+public class Lista<T> {
+    private No<T> inicio;
+    private int tamanho;
+
+    public Lista() {
+        this.inicio = null;
+        this.tamanho = 0;
+    }
+
+    public void adicionar(T elemento) {
+        No<T> novo = new No<>(elemento);
+        if (inicio == null) {
+            inicio = novo;
+        } else {
+            No<T> atual = inicio;
+            while (atual.getProximo() != null) {
+                atual = atual.getProximo();
+            }
+            atual.setProximo(novo);
+        }
+        tamanho++;
+    }
+
+    public T get(int indice) {
+        if (indice < 0 || indice >= tamanho) {
+            throw new IndexOutOfBoundsException("Índice inválido.");
+        }
+
+        No<T> atual = inicio;
+        for (int i = 0; i < indice; i++) {
+            atual = atual.getProximo();
+        }
+        return atual.getElemento();
+    }
+
+    public int tamanho() {
+        return tamanho;
+    }
+
+    public boolean estaVazia() {
+        return tamanho == 0;
+    }
+
+    public void limpar() {
+        inicio = null;
+        tamanho = 0;
+    }
+}
