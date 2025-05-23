@@ -1,0 +1,44 @@
+package view.caminhoes;
+
+public class CaminhaoGrande extends Caminhao {
+    private int tempoEspera;
+    private int tolerancia;
+
+    public CaminhaoGrande(int id, int tolerancia) {
+        super(id, 20000); // capacidade fixa de 20 toneladas
+        this.tempoEspera = 0;
+        this.tolerancia = tolerancia;
+    }
+
+    public void incrementarEspera() {
+        tempoEspera++;
+    }
+
+    public boolean passouTolerancia() {
+        return tempoEspera >= tolerancia;
+    }
+
+    public int getTempoEspera() {
+        return tempoEspera;
+    }
+
+    public int getTolerancia() {
+        return tolerancia;
+    }
+
+    @Override
+    public void descarregar() {
+        super.descarregar();
+        tempoEspera = 0;
+    }
+
+    @Override
+    public String getTipo() {
+        return "Caminhão Grande";
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " | Espera: " + tempoEspera + "/" + tolerancia;
+    }
+}
