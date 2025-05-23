@@ -1,0 +1,49 @@
+package estruturas;
+import estruturas.No;
+
+public class Fila<T> {
+    private No<T> inicio;
+    private No<T> fim;
+    private int tamanho;
+
+    public Fila() {
+        this.inicio = null;
+        this.fim = null;
+        this.tamanho = 0;
+    }
+
+    public void enfileirar(T elemento) {
+        No<T> novo = new No<>(elemento);
+        if (fim != null) {
+            fim.setProximo(novo);
+        } else {
+            inicio = novo;
+        }
+        fim = novo;
+        tamanho++;
+    }
+
+    public T desenfileirar() {
+        if (inicio == null) return null;
+
+        T elemento = inicio.getElemento();
+        inicio = inicio.getProximo();
+        if (inicio == null) {
+            fim = null;
+        }
+        tamanho--;
+        return elemento;
+    }
+
+    public boolean estaVazia() {
+        return tamanho == 0;
+    }
+
+    public int tamanho() {
+        return tamanho;
+    }
+
+    public T espiar() {
+        return (inicio != null) ? inicio.getElemento() : null;
+    }
+}
