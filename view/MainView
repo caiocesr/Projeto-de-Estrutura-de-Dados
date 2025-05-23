@@ -1,0 +1,124 @@
+package view;
+
+import estruturas.Lista;
+import view.MapaZonasPanel;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+
+public class MainView extends JFrame {
+    private Simulador controller;
+    private JTextArea logArea;
+    private JLabel turnoLabel;
+    private JLabel totalColetadoLabel;
+    private Timer timer;
+    private int totalColetado = 0;
+    private MapaZonasPanel mapaPanel;
+
+    public MainView() {
+        setTitle("Simulador de Coleta de Lixo");
+        setSize(900, 700);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        controller = new Simulador();
+
+        // Painel superior
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
+        JButton iniciarBtn = new JButton("▶ Iniciar");
+        JButton finalizarBtn = new JButton("⛔ Finalizar");
+        JButton statusBtn = new JButton("📋 Status Caminhões");
+
+        turnoLabel = new JLabel("Turno: 0");
+        totalColetadoLabel = new JLabel("Total coletado: 0 kg");
+
+        Font fonte = new Font("SansSerif", Font.BOLD, 14);
+        turnoLabel.setFont(fonte);
+        totalColetadoLabel.setFont(fonte);
+
+        topPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        topPanel.add(iniciarBtn);
+        topPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        topPanel.add(finalizarBtn);
+        topPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        topPanel.add(statusBtn);
+        topPanel.add(Box.createHorizontalGlue());
+        topPanel.add(turnoLabel);
+        topPanel.add(Box.createRigidArea(new Dimension(15, 0)));
+        topPanel.add(totalColetadoLabel);
+        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        add(topPanel, BorderLayout.NORTH);
+
+        // Log central
+        logArea = new JTextArea();
+        logArea.setEditable(false);
+        logArea.setFont(new Font("Monospaced", Font.PLAIN, 13));
+        JScrollPane scrollPane = new JScrollPane(logArea);
+        add(scrollPane, BorderLayout.CENTER);
+
+        // Painel gráfico das zonas
+        mapaPanel = new MapaZonasPanel();
+        add(mapaPanel, BorderLayout.SOUTH);
+
+        // Timer para simulação automática
+        timer = new Timer(2000, (ActionEvent e) -> {
+            Lista<String> eventos = controller.avancarTurno(controller);
+            turnoLabel.setText("Turno: " + controller.getTurno());
+
+            for (int i = 0; i < eventos.tamanho(); i++) {
+                String evento = eventos.get(i);
+                log(evento);
+
+                // Atualiza zona destacada e soma de kg
+                if (evento.contains("coletou")) {
+                    if (evento.contains("na zona")) {
+                        String[] partes = evento.split("na zona ");
+                        if (partes.length > 1) {
+                            String nomeZona = partes[1].trim();
+                            mapaPanel.setZonaDestacada(nomeZona);
+                        }
+                    }
+
+                    String[] partes = evento.split("coletou ");
+                    if (partes.length > 1) {
+                        String[] valor = partes[1].split("kg");
+                        try {
+                            int kg = Integer.parseInt(valor[0].trim());
+                            totalColetado += kg;
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+
+            totalColetadoLabel.setText("Total coletado: " + totalColetado + " kg");
+        });
+
+        // Botões
+        iniciarBtn.addActionListener(e -> {
+            log("🟢 Simulação iniciada...");
+            timer.start();
+        });
+
+        finalizarBtn.addActionListener(e -> {
+            timer.stop();
+            log("\n" + controller.gerarResumoEstatisticas());
+        });
+
+        statusBtn.addActionListener(e -> {
+            log("📦 STATUS CAMINHÕES:");
+            Lista<String> status = controller.getStatusCaminhoes();
+            for (int i = 0; i < status.tamanho(); i++) {
+                log(status.get(i));
+            }
+        });
+
+        setVisible(true);
+    }
+
+    private void log(String texto) {
+        logArea.append(texto + "\n");
+    }
+}
