@@ -1,0 +1,69 @@
+package model.grafo;
+
+import estruturas.Lista;
+import model.grafo.RegistroAresta;
+import model.grafo.Vertice;
+import model.grafo.Aresta;
+
+public class Grafo {
+    private Lista<RegistroAresta> registros;
+
+    public Grafo() {
+        this.registros = new Lista<>();
+    }
+
+    public void adicionarVertice(Vertice v) {
+        if (!contemVertice(v)) {
+            registros.adicionar(new RegistroAresta(v));
+        }
+    }
+
+    public void adicionarAresta(String nomeOrigem, String nomeDestino, int peso) {
+        Vertice origem = buscarVerticePorNome(nomeOrigem);
+        Vertice destino = buscarVerticePorNome(nomeDestino);
+        if (origem != null && destino != null) {
+            RegistroAresta reg = buscarRegistro(origem);
+            if (reg != null) {
+                reg.adicionarAresta(new Aresta(origem, destino, peso));
+            }
+        }
+    }
+
+    public Lista<Aresta> getArestasDe(Vertice v) {
+        RegistroAresta reg = buscarRegistro(v);
+        if (reg != null) {
+            return reg.getArestas();
+        }
+        return new Lista<>();
+    }
+
+    public Lista<Vertice> getVertices() {
+        Lista<Vertice> todos = new Lista<>();
+        for (int i = 0; i < registros.tamanho(); i++) {
+            todos.adicionar(registros.get(i).getVertice());
+        }
+        return todos;
+    }
+
+    public Vertice buscarVerticePorNome(String nome) {
+        for (int i = 0; i < registros.tamanho(); i++) {
+            if (registros.get(i).getVertice().getNome().equals(nome)) {
+                return registros.get(i).getVertice();
+            }
+        }
+        return null;
+    }
+
+    private RegistroAresta buscarRegistro(Vertice v) {
+        for (int i = 0; i < registros.tamanho(); i++) {
+            if (registros.get(i).getVertice().equals(v)) {
+                return registros.get(i);
+            }
+        }
+        return null;
+    }
+
+    private boolean contemVertice(Vertice v) {
+        return buscarRegistro(v) != null;
+    }
+}
