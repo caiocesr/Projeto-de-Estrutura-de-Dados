@@ -1,0 +1,30 @@
+package view.estruturas;
+
+import java.util.Random;
+
+public class Zona {
+    private String nome;
+    private int lixoGeradoMin;
+    private int lixoGeradoMax;
+    private Random random;
+
+    public Zona(String nome, int lixoGeradoMin, int lixoGeradoMax) {
+        this.nome = nome;
+        this.lixoGeradoMin = lixoGeradoMin;
+        this.lixoGeradoMax = lixoGeradoMax;
+        this.random = new Random();
+    }
+
+    public int gerarLixo() {
+        return random.nextInt(lixoGeradoMax - lixoGeradoMin + 1) + lixoGeradoMin;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    @Override
+    public String toString() {
+        return "Zona " + nome + " (Geração: " + lixoGeradoMin + " a " + lixoGeradoMax + " kg)";
+    }
+}
