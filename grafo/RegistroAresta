@@ -1,0 +1,27 @@
+package model.grafo;
+
+import estruturas.Lista;
+import model.grafo.Vertice;
+import model.grafo.Aresta;
+
+public class RegistroAresta {
+    private Vertice vertice;
+    private Lista<Aresta> arestas;
+
+    public RegistroAresta(Vertice vertice) {
+        this.vertice = vertice;
+        this.arestas = new Lista<>();
+    }
+
+    public Vertice getVertice() {
+        return vertice;
+    }
+
+    public Lista<Aresta> getArestas() {
+        return arestas;
+    }
+
+    public void adicionarAresta(Aresta a) {
+        arestas.adicionar(a);
+    }
+}
