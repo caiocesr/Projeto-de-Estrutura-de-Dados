@@ -1,0 +1,106 @@
+package model.grafo;
+
+import estruturas.Lista;
+import view.estruturas.Zona;
+import model.grafo.Grafo;
+import model.grafo.Vertice;
+import model.grafo.Aresta;
+
+public class Dijkstra {
+    private Grafo grafo;
+    private Lista<String> nomes;
+    private Lista<Vertice> vertices;
+
+    public Dijkstra(Grafo grafo, Lista<String> nomes, Lista<Vertice> vertices) {
+        this.grafo = grafo;
+        this.nomes = nomes;
+        this.vertices = vertices;
+    }
+
+    public Zona zonaMaisProxima(String origem, Lista<Zona> zonas) {
+        Vertice origemVertice = grafo.buscarVerticePorNome(origem);
+        if (origemVertice == null) return zonas.get(0);
+
+        Lista<Vertice> visitados = new Lista<>();
+        Lista<Vertice> naoVisitados = grafo.getVertices();
+        int[] distancias = new int[naoVisitados.tamanho()];
+        Vertice[] anteriores = new Vertice[naoVisitados.tamanho()];
+
+        // Inicializa distâncias
+        for (int i = 0; i < naoVisitados.tamanho(); i++) {
+            distancias[i] = Integer.MAX_VALUE;
+            if (naoVisitados.get(i).equals(origemVertice)) {
+                distancias[i] = 0;
+            }
+        }
+
+        while (naoVisitados.tamanho() > 0) {
+            // Buscar vértice com menor distância
+            int menorIndice = 0;
+            int menorValor = Integer.MAX_VALUE;
+            for (int i = 0; i < naoVisitados.tamanho(); i++) {
+                Vertice v = naoVisitados.get(i);
+                int idx = indexOfVertice(v);
+                if (distancias[idx] < menorValor) {
+                    menorValor = distancias[idx];
+                    menorIndice = i;
+                }
+            }
+
+            Vertice atual = naoVisitados.get(menorIndice);
+            naoVisitados = remover(naoVisitados, atual);
+            visitados.adicionar(atual);
+
+            Lista<Aresta> vizinhos = grafo.getArestasDe(atual);
+            for (int i = 0; i < vizinhos.tamanho(); i++) {
+                Aresta aresta = vizinhos.get(i);
+                Vertice vizinho = aresta.getDestino();
+                int idxAtual = indexOfVertice(atual);
+                int idxVizinho = indexOfVertice(vizinho);
+
+                if (distancias[idxAtual] + aresta.getPeso() < distancias[idxVizinho]) {
+                    distancias[idxVizinho] = distancias[idxAtual] + aresta.getPeso();
+                    anteriores[idxVizinho] = atual;
+                }
+            }
+        }
+
+        // Encontrar o vértice mais próximo que não seja o próprio
+        int melhorIndice = -1;
+        int menor = Integer.MAX_VALUE;
+        for (int i = 0; i < distancias.length; i++) {
+            if (!vertices.get(i).equals(origemVertice) && distancias[i] < menor) {
+                menor = distancias[i];
+                melhorIndice = i;
+            }
+        }
+
+        if (melhorIndice != -1) {
+            String nomeZona = vertices.get(melhorIndice).getNome();
+            for (int i = 0; i < zonas.tamanho(); i++) {
+                if (zonas.get(i).getNome().equals(nomeZona)) {
+                    return zonas.get(i);
+                }
+            }
+        }
+
+        return zonas.get(0); // fallback
+    }
+
+    private int indexOfVertice(Vertice v) {
+        for (int i = 0; i < vertices.tamanho(); i++) {
+            if (vertices.get(i).equals(v)) return i;
+        }
+        return -1;
+    }
+
+    private Lista<Vertice> remover(Lista<Vertice> lista, Vertice v) {
+        Lista<Vertice> nova = new Lista<>();
+        for (int i = 0; i < lista.tamanho(); i++) {
+            if (!lista.get(i).equals(v)) {
+                nova.adicionar(lista.get(i));
+            }
+        }
+        return nova;
+    }
+}
