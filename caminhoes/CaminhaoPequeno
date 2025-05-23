@@ -1,0 +1,40 @@
+package view.caminhoes;
+
+public class CaminhaoPequeno extends Caminhao {
+    private int viagensRealizadas;
+    private int limiteViagens;
+
+    public CaminhaoPequeno(int id, int capacidade, int limiteViagens) {
+        super(id, capacidade);
+        this.viagensRealizadas = 0;
+        this.limiteViagens = limiteViagens;
+    }
+
+    public boolean podeViajar() {
+        return viagensRealizadas < limiteViagens;
+    }
+
+    @Override
+    public void descarregar() {
+        super.descarregar();
+        viagensRealizadas++;
+    }
+
+    public int getViagensRealizadas() {
+        return viagensRealizadas;
+    }
+
+    public int getLimiteViagens() {
+        return limiteViagens;
+    }
+
+    @Override
+    public String getTipo() {
+        return "Caminhão Pequeno";
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " | Viagens: " + viagensRealizadas + "/" + limiteViagens;
+    }
+}
