@@ -1,0 +1,47 @@
+package view.caminhoes;
+
+public abstract class Caminhao {
+    protected int id;
+    protected int capacidade;
+    protected int cargaAtual;
+
+    public Caminhao(int id, int capacidade) {
+        this.id = id;
+        this.capacidade = capacidade;
+        this.cargaAtual = 0;
+    }
+
+    public void carregar(int quantidade) {
+        cargaAtual += quantidade;
+        if (cargaAtual > capacidade) {
+            cargaAtual = capacidade;
+        }
+    }
+
+    public void descarregar() {
+        cargaAtual = 0;
+    }
+
+    public boolean estaCheio() {
+        return cargaAtual >= capacidade;
+    }
+
+    public int getCargaAtual() {
+        return cargaAtual;
+    }
+
+    public int getCapacidade() {
+        return capacidade;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public abstract String getTipo();
+
+    @Override
+    public String toString() {
+        return getTipo() + " #" + id + " | Carga: " + cargaAtual + "/" + capacidade;
+    }
+}
