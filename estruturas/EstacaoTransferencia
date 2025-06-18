@@ -83,7 +83,7 @@ public class EstacaoTransferencia {
 
     private void adicionarCaminhaoGrande() {
         int novoId = caminhoesGrandes.tamanho() + 1;
-        CaminhaoGrande novoCaminhao = new CaminhaoGrande(novoId, 3); // Tolerância de 3 turnos
+        CaminhaoGrande novoCaminhao = new CaminhaoGrande(novoId, 3); 
         caminhoesGrandes.adicionar(novoCaminhao);
     }
 
