@@ -1,44 +1,54 @@
 package view.caminhoes;
 
 public class CaminhaoGrande extends Caminhao {
-    private int tempoEspera;
-    private int tolerancia;
+    private int toleranciaEspera;
+    private int tempoEsperandoAtual;
+    private boolean estaNaEstacao;
 
-    public CaminhaoGrande(int id, int tolerancia) {
-        super(id, 20000); // capacidade fixa de 20 toneladas
-        this.tempoEspera = 0;
-        this.tolerancia = tolerancia;
-    }
-
-    public void incrementarEspera() {
-        tempoEspera++;
-    }
-
-    public boolean passouTolerancia() {
-        return tempoEspera >= tolerancia;
-    }
-
-    public int getTempoEspera() {
-        return tempoEspera;
-    }
-
-    public int getTolerancia() {
-        return tolerancia;
+    public CaminhaoGrande(int id, int toleranciaEspera) {
+        super(id, 20000); // 20 toneladas em kg
+        this.toleranciaEspera = toleranciaEspera;
+        this.tempoEsperandoAtual = 0;
+        this.estaNaEstacao = true;
     }
 
     @Override
-    public void descarregar() {
-        super.descarregar();
-        tempoEspera = 0;
+    public void executarOperacao() {
+        if (estaLotado()) {
+            status = "Indo para aterro";
+            partirParaAterro();
+        } else if (tempoEsperandoAtual >= toleranciaEspera && !estaVazio()) {
+            status = "Tempo esgotado - Indo para aterro";
+            partirParaAterro();
+        } else {
+            status = "Aguardando na estação";
+            tempoEsperandoAtual++;
+        }
     }
 
-    @Override
-    public String getTipo() {
-        return "Caminhão Grande";
+    public void receberCarga(int quantidade) {
+        int espacoDisponivel = capacidadeMaxima - cargaAtual;
+        int cargaRecebida = Math.min(quantidade, espacoDisponivel);
+        cargaAtual += cargaRecebida;
+        tempoEsperandoAtual = 0; // Reset do tempo ao receber carga
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + " | Espera: " + tempoEspera + "/" + tolerancia;
+    public void partirParaAterro() {
+        estaNaEstacao = false;
+        // Simula ida ao aterro
+        cargaAtual = 0;
+        tempoEsperandoAtual = 0;
+        status = "Retornando da estação";
+        estaNaEstacao = true;
     }
+
+    public boolean devePartir() {
+        return estaLotado() || (tempoEsperandoAtual >= toleranciaEspera && !estaVazio());
+    }
+
+    // Getters e Setters
+    public int getToleranciaEspera() { return toleranciaEspera; }
+    public int getTempoEsperandoAtual() { return tempoEsperandoAtual; }
+    public boolean isEstaNaEstacao() { return estaNaEstacao; }
+    public void setEstaNaEstacao(boolean estaNaEstacao) { this.estaNaEstacao = estaNaEstacao; }
 }
