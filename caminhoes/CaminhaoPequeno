@@ -2,39 +2,51 @@ package view.caminhoes;
 
 public class CaminhaoPequeno extends Caminhao {
     private int viagensRealizadas;
-    private int limiteViagens;
+    private int maxViagens;
+    private int tempoEspera;
+    private String zonaAtual;
 
-    public CaminhaoPequeno(int id, int capacidade, int limiteViagens) {
+    public CaminhaoPequeno(int id, int capacidade, int maxViagens) {
         super(id, capacidade);
+        this.maxViagens = maxViagens;
         this.viagensRealizadas = 0;
-        this.limiteViagens = limiteViagens;
-    }
-
-    public boolean podeViajar() {
-        return viagensRealizadas < limiteViagens;
+        this.tempoEspera = 0;
+        this.zonaAtual = "";
     }
 
     @Override
-    public void descarregar() {
-        super.descarregar();
-        viagensRealizadas++;
+    public void executarOperacao() {
+        if (viagensRealizadas < maxViagens && !estaLotado()) {
+            status = "Coletando";
+        } else if (estaLotado()) {
+            status = "Indo para estação";
+        } else {
+            status = "Fim do expediente";
+        }
     }
 
-    public int getViagensRealizadas() {
-        return viagensRealizadas;
+    public void realizarViagem() {
+        if (viagensRealizadas < maxViagens) {
+            viagensRealizadas++;
+        }
     }
 
-    public int getLimiteViagens() {
-        return limiteViagens;
+    public boolean podeTrabalhar() {
+        return viagensRealizadas < maxViagens;
     }
 
-    @Override
-    public String getTipo() {
-        return "Caminhão Pequeno";
+    public void resetarPorDia() {
+        viagensRealizadas = 0;
+        cargaAtual = 0;
+        tempoEspera = 0;
+        status = "Disponível";
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + " | Viagens: " + viagensRealizadas + "/" + limiteViagens;
-    }
+    public int getViagensRealizadas() { return viagensRealizadas; }
+    public int getMaxViagens() { return maxViagens; }
+    public int getTempoEspera() { return tempoEspera; }
+    public void setTempoEspera(int tempoEspera) { this.tempoEspera = tempoEspera; }
+    public void incrementarTempoEspera() { this.tempoEspera++; }
+    public String getZonaAtual() { return zonaAtual; }
+    public void setZonaAtual(String zonaAtual) { this.zonaAtual = zonaAtual; }
 }
