@@ -1,49 +1,49 @@
-package estruturas;
-import estruturas.No;
+package view.estruturas;
 
 public class Fila<T> {
-    private No<T> inicio;
-    private No<T> fim;
+    private No<T> primeiro;
+    private No<T> ultimo;
     private int tamanho;
 
     public Fila() {
-        this.inicio = null;
-        this.fim = null;
+        this.primeiro = null;
+        this.ultimo = null;
         this.tamanho = 0;
     }
 
-    public void enfileirar(T elemento) {
-        No<T> novo = new No<>(elemento);
-        if (fim != null) {
-            fim.setProximo(novo);
+    public void enfileirar(T item) {
+        No<T> novoNo = new No<>(item);
+        if (ultimo == null) {
+            primeiro = ultimo = novoNo;
         } else {
-            inicio = novo;
+            ultimo.setProximo(novoNo);
+            ultimo = novoNo;
         }
-        fim = novo;
         tamanho++;
     }
 
     public T desenfileirar() {
-        if (inicio == null) return null;
-
-        T elemento = inicio.getElemento();
-        inicio = inicio.getProximo();
-        if (inicio == null) {
-            fim = null;
+        if (primeiro == null) {
+            throw new RuntimeException("Fila vazia");
+        }
+        T item = primeiro.getDado();
+        primeiro = primeiro.getProximo();
+        if (primeiro == null) {
+            ultimo = null;
         }
         tamanho--;
-        return elemento;
+        return item;
     }
 
-    public boolean estaVazia() {
-        return tamanho == 0;
+    public T frente() {
+        if (primeiro == null) {
+            throw new RuntimeException("Fila vazia");
+        }
+        return primeiro.getDado();
     }
 
-    public int tamanho() {
-        return tamanho;
-    }
+    public boolean estaVazia() { return primeiro == null; }
+    public int tamanho() { return tamanho; }
 
-    public T espiar() {
-        return (inicio != null) ? inicio.getElemento() : null;
-    }
+    public No<T> getPrimeiro() { return primeiro; }
 }
