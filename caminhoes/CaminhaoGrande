@@ -35,7 +35,6 @@ public class CaminhaoGrande extends Caminhao {
 
     public void partirParaAterro() {
         estaNaEstacao = false;
-        // Simula ida ao aterro
         cargaAtual = 0;
         tempoEsperandoAtual = 0;
         status = "Retornando da estação";
@@ -45,8 +44,7 @@ public class CaminhaoGrande extends Caminhao {
     public boolean devePartir() {
         return estaLotado() || (tempoEsperandoAtual >= toleranciaEspera && !estaVazio());
     }
-
-    // Getters e Setters
+    
     public int getToleranciaEspera() { return toleranciaEspera; }
     public int getTempoEsperandoAtual() { return tempoEsperandoAtual; }
     public boolean isEstaNaEstacao() { return estaNaEstacao; }
