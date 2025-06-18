@@ -1,170 +1,253 @@
 package view;
 
-import estruturas.Lista;
-import view.estruturas.Zona;
-import view.caminhoes.CaminhaoPequeno;
-import view.estruturas.EstacaoTransferencia;
-import model.grafo.Vertice;
-import model.grafo.Grafo;
-import model.grafo.Dijkstra;
-
-import java.util.Random;
+import view.estruturas.*;
+import view.caminhoes.*;
 
 public class Simulador {
     private Lista<Zona> zonas;
     private Lista<CaminhaoPequeno> caminhoesPequenos;
     private Lista<EstacaoTransferencia> estacoes;
-    private Grafo grafo;
-    private Lista<Vertice> vertices;
-    private Lista<String> nomes;
-    private int turno;
-    private int proximoIdPequeno = 1;
-    private Random random;
-    private int caminhõesGrandesUsados = 0;
-    private int totalTempoEspera = 0;
-    private int totalDescarregamentos = 0;
+    private int turnoAtual;
+    private int totalLixoColetado;
+    private int totalDescarregamentos;
+    private double tempoMedioEspera;
+    private StringBuilder log;
 
     public Simulador() {
+        inicializarSimulacao();
+    }
+
+    private void inicializarSimulacao() {
         zonas = new Lista<>();
         caminhoesPequenos = new Lista<>();
         estacoes = new Lista<>();
-        grafo = new Grafo();
-        vertices = new Lista<>();
-        nomes = new Lista<>();
-        random = new Random();
-        turno = 0;
+        turnoAtual = 0;
+        totalLixoColetado = 0;
+        totalDescarregamentos = 0;
+        tempoMedioEspera = 0.0;
+        log = new StringBuilder();
 
-        inicializarZonas();
-        inicializarGrafo();
-        inicializarEstacoes();
-        inicializarCaminhoesPequenos(5);
+        criarZonas();
+        criarCaminhoesPequenos();
+        criarEstacoes();
+
+        log.append("=== SIMULADOR DE COLETA DE LIXO DE TERESINA ===\n");
+        log.append("Simulação inicializada com:\n");
+        log.append("- ").append(zonas.tamanho()).append(" zonas\n");
+        log.append("- ").append(caminhoesPequenos.tamanho()).append(" caminhões pequenos\n");
+        log.append("- ").append(estacoes.tamanho()).append(" estações de transferência\n\n");
     }
 
-    private void inicializarZonas() {
-        zonas.adicionar(new Zona("A", 500, 1200));
-        zonas.adicionar(new Zona("B", 600, 1000));
-        zonas.adicionar(new Zona("C", 300, 900));
-        zonas.adicionar(new Zona("D", 700, 1300));
-        zonas.adicionar(new Zona("E", 400, 1100));
+    private void criarZonas() {
+        String[] nomesZonas = {"Sul", "Norte", "Centro", "Leste", "Sudeste"};
+
+        for (int i = 0; i < nomesZonas.length; i++) {
+            int[] geracao = ConfiguracaoSimulacao.GERACAO_LIXO_ZONAS[i];
+            Zona zona = new Zona(nomesZonas[i], geracao[0], geracao[1]);
+            zonas.adicionar(zona);
+        }
     }
 
-    private void inicializarGrafo() {
+    private void criarCaminhoesPequenos() {
+        int id = 1;
+
+        for (int i = 0; i < ConfiguracaoSimulacao.NUM_CAMINHOES_2T; i++) {
+            caminhoesPequenos.adicionar(new CaminhaoPequeno(id++, 2000,
+                    ConfiguracaoSimulacao.MAX_VIAGENS_POR_DIA));
+        }
+
+        for (int i = 0; i < ConfiguracaoSimulacao.NUM_CAMINHOES_4T; i++) {
+            caminhoesPequenos.adicionar(new CaminhaoPequeno(id++, 4000,
+                    ConfiguracaoSimulacao.MAX_VIAGENS_POR_DIA));
+        }
+
+        for (int i = 0; i < ConfiguracaoSimulacao.NUM_CAMINHOES_8T; i++) {
+            caminhoesPequenos.adicionar(new CaminhaoPequeno(id++, 8000,
+                    ConfiguracaoSimulacao.MAX_VIAGENS_POR_DIA));
+        }
+
+        for (int i = 0; i < ConfiguracaoSimulacao.NUM_CAMINHOES_10T; i++) {
+            caminhoesPequenos.adicionar(new CaminhaoPequeno(id++, 10000,
+                    ConfiguracaoSimulacao.MAX_VIAGENS_POR_DIA));
+        }
+    }
+
+    private void criarEstacoes() {
+        estacoes.adicionar(new EstacaoTransferencia(1,
+                ConfiguracaoSimulacao.TEMPO_MAXIMO_ESPERA_ESTACAO));
+        estacoes.adicionar(new EstacaoTransferencia(2,
+                ConfiguracaoSimulacao.TEMPO_MAXIMO_ESPERA_ESTACAO));
+    }
+
+    public void executarSimulacao(int numeroTurnos) {
+        log.append("Iniciando simulação de ").append(numeroTurnos).append(" turnos...\n\n");
+
+        for (int turno = 1; turno <= numeroTurnos; turno++) {
+            turnoAtual = turno;
+            executarTurno();
+        }
+
+        calcularEstatisticasFinais();
+        gerarRelatorioFinal();
+    }
+
+    private void executarTurno() {
+        log.append("=== TURNO ").append(turnoAtual).append(" ===\n");
+        gerarLixoNasZonas();
+        executarColeta();
+        processarEstacoes();
+        log.append("\n");
+    }
+
+    private void gerarLixoNasZonas() {
         for (int i = 0; i < zonas.tamanho(); i++) {
-            Zona z = zonas.get(i);
-            Vertice v = new Vertice(z.getNome());
-            grafo.adicionarVertice(v);
-            vertices.adicionar(v);
-            nomes.adicionar(z.getNome());
-        }
+            Zona zona = zonas.obter(i);
+            int lixoAnterior = zona.getLixoDisponivel();
+            zona.gerarLixo();
+            int lixoGerado = zona.getLixoDisponivel() - lixoAnterior;
 
-        grafo.adicionarAresta("A", "B", 2);
-        grafo.adicionarAresta("B", "A", 2);
-        grafo.adicionarAresta("A", "C", 5);
-        grafo.adicionarAresta("C", "A", 5);
-        grafo.adicionarAresta("B", "C", 1);
-        grafo.adicionarAresta("C", "B", 1);
-        grafo.adicionarAresta("B", "D", 4);
-        grafo.adicionarAresta("D", "B", 4);
-        grafo.adicionarAresta("C", "E", 3);
-        grafo.adicionarAresta("E", "C", 3);
-        grafo.adicionarAresta("D", "E", 2);
-        grafo.adicionarAresta("E", "D", 2);
-    }
-
-    private void inicializarEstacoes() {
-        estacoes.adicionar(new EstacaoTransferencia(1));
-        estacoes.adicionar(new EstacaoTransferencia(2));
-    }
-
-    private void inicializarCaminhoesPequenos(int quantidade) {
-        int[] capacidades = {2000, 4000, 8000, 10000};
-        for (int i = 0; i < quantidade; i++) {
-            int capacidade = capacidades[random.nextInt(capacidades.length)];
-            caminhoesPequenos.adicionar(new CaminhaoPequeno(proximoIdPequeno++, capacidade, 5));
+            log.append("Zona ").append(zona.getNome())
+                    .append(": +").append(lixoGerado).append("kg de lixo gerado ")
+                    .append("(total: ").append(zona.getLixoDisponivel()).append("kg)\n");
         }
     }
 
-    public Lista<String> avancarTurno(Simulador controller) {
-        Lista<String> log = new Lista<>();
-        turno++;
-
+    private void executarColeta() {
         for (int i = 0; i < caminhoesPequenos.tamanho(); i++) {
-            CaminhaoPequeno caminhao = caminhoesPequenos.get(i);
-            if (!caminhao.podeViajar()) continue;
+            CaminhaoPequeno caminhao = caminhoesPequenos.obter(i);
 
-            // Escolhe uma origem aleatória (nome de uma zona)
-            int origemIndex = random.nextInt(zonas.tamanho());
-            String origemNome = zonas.get(origemIndex).getNome();
+            if (caminhao.podeTrabalhar() && !caminhao.estaLotado() &&
+                    caminhao.getStatus().equals("Disponível")) {
 
-            Zona zonaEscolhida = escolherZonaMaisProxima(origemNome);
-            int lixo = zonaEscolhida.gerarLixo();
+                realizarColeta(caminhao);
+            }
 
-            caminhao.carregar(lixo);
-            log.adicionar("Turno " + turno + ": " + caminhao.getTipo() + " " + caminhao.getId() +
-                    " coletou " + lixo + "kg na zona " + zonaEscolhida.getNome());
+            if (caminhao.estaLotado() && !caminhao.getStatus().equals("Na fila da estação")) {
+                enviarParaEstacao(caminhao);
+            }
+        }
+    }
 
-            if (caminhao.estaCheio()) {
-                EstacaoTransferencia est = estacoes.get(random.nextInt(estacoes.tamanho()));
-                est.adicionarCaminhaoPequeno(caminhao);
-                log.adicionar("Caminhão " + caminhao.getId() + " enviado para Estação " + est.getId());
+    private void realizarColeta(CaminhaoPequeno caminhao) {
+        Zona melhorZona = null;
+        int maiorQuantidadeLixo = 0;
+
+        for (int i = 0; i < zonas.tamanho(); i++) {
+            Zona zona = zonas.obter(i);
+            if (zona.getLixoDisponivel() > maiorQuantidadeLixo) {
+                maiorQuantidadeLixo = zona.getLixoDisponivel();
+                melhorZona = zona;
             }
         }
 
+        if (melhorZona != null && maiorQuantidadeLixo > 0) {
+            int capacidadeDisponivel = caminhao.getCapacidadeMaxima() - caminhao.getCargaAtual();
+            int lixoColetado = melhorZona.coletarLixo(capacidadeDisponivel);
+
+            caminhao.setCargaAtual(caminhao.getCargaAtual() + lixoColetado);
+            caminhao.setZonaAtual(melhorZona.getNome());
+            caminhao.realizarViagem();
+
+            totalLixoColetado += lixoColetado;
+
+            log.append("Caminhão ").append(caminhao.getId())
+                    .append(" coletou ").append(lixoColetado).append("kg na zona ")
+                    .append(melhorZona.getNome())
+                    .append(" (carga atual: ").append(caminhao.getCargaAtual()).append("kg)\n");
+        }
+    }
+
+    private void enviarParaEstacao(CaminhaoPequeno caminhao) {
+        EstacaoTransferencia melhorEstacao = estacoes.obter(0);
+        for (int i = 1; i < estacoes.tamanho(); i++) {
+            EstacaoTransferencia estacao = estacoes.obter(i);
+            if (estacao.getTamanhoFila() < melhorEstacao.getTamanhoFila()) {
+                melhorEstacao = estacao;
+            }
+        }
+
+        melhorEstacao.adicionarCaminhaoParaDescarregar(caminhao);
+
+        log.append("Caminhão ").append(caminhao.getId())
+                .append(" enviado para Estação ").append(melhorEstacao.getId())
+                .append(" (fila: ").append(melhorEstacao.getTamanhoFila()).append(")\n");
+    }
+
+    private void processarEstacoes() {
         for (int i = 0; i < estacoes.tamanho(); i++) {
-            estacoes.get(i).processar(controller);
+            EstacaoTransferencia estacao = estacoes.obter(i);
+            int descarregamentosAntes = estacao.getTotalDescarregamentos();
+
+            estacao.processarDescarregamento();
+
+            int novosDescarregamentos = estacao.getTotalDescarregamentos() - descarregamentosAntes;
+            totalDescarregamentos += novosDescarregamentos;
+
+            if (novosDescarregamentos > 0) {
+                log.append("Estação ").append(estacao.getId())
+                        .append(": ").append(novosDescarregamentos).append(" descarregamento(s)\n");
+            }
         }
-
-        return log;
     }
 
-    private Zona escolherZonaMaisProxima(String origem) {
-        Dijkstra dijkstra = new Dijkstra(grafo, nomes, vertices);
-        return dijkstra.zonaMaisProxima(origem, zonas);
-    }
+    private void calcularEstatisticasFinais() {
+        int totalTempoEspera = 0;
+        int totalCaminhoes = 0;
 
-    public Lista<String> getStatusCaminhoes() {
-        Lista<String> status = new Lista<>();
         for (int i = 0; i < caminhoesPequenos.tamanho(); i++) {
-            status.adicionar(caminhoesPequenos.get(i).toString());
+            CaminhaoPequeno caminhao = caminhoesPequenos.obter(i);
+            totalTempoEspera += caminhao.getTempoEspera();
+            totalCaminhoes++;
         }
-        return status;
+
+        tempoMedioEspera = totalCaminhoes > 0 ? (double) totalTempoEspera / totalCaminhoes : 0.0;
     }
 
-    public int getTurno() {
-        return turno;
-    }
+    private void gerarRelatorioFinal() {
+        log.append("\n=== RELATÓRIO FINAL DA SIMULAÇÃO ===\n");
+        log.append("Turnos executados: ").append(turnoAtual).append("\n");
+        log.append("Total de lixo coletado: ").append(totalLixoColetado).append("kg\n");
+        log.append("Total de descarregamentos: ").append(totalDescarregamentos).append("\n");
+        log.append("Tempo médio de espera: ").append(String.format("%.2f", tempoMedioEspera)).append(" turnos\n");
 
-    public Lista<Zona> getZonas() {
-        return zonas;
-    }
+        int totalCaminhoesGrandes = 0;
+        for (int i = 0; i < estacoes.tamanho(); i++) {
+            EstacaoTransferencia estacao = estacoes.obter(i);
+            int numCaminhoes = estacao.getNumCaminhoesGrandes();
+            totalCaminhoesGrandes += numCaminhoes;
 
-    public Lista<EstacaoTransferencia> getEstacoes() {
-        return estacoes;
-    }
-
-    public void registrarNovoCaminhaoGrande() {
-        caminhõesGrandesUsados++;
-    }
-
-    public void registrarTempoEspera(int tempo) {
-        totalTempoEspera += tempo;
-    }
-
-    public void registrarDescarregamento() {
-        totalDescarregamentos++;
-    }
-
-    public String gerarResumoEstatisticas() {
-        StringBuilder sb = new StringBuilder("=== ESTATÍSTICAS FINAIS ===\n");
-        sb.append("Turnos executados: ").append(turno).append("\n");
-        sb.append("Caminhões grandes utilizados: ").append(caminhõesGrandesUsados).append("\n");
-        sb.append("Total de descarregamentos: ").append(totalDescarregamentos).append("\n");
-        if (totalDescarregamentos > 0) {
-            double mediaEspera = (double) totalTempoEspera / totalDescarregamentos;
-            sb.append("Tempo médio de espera: ").append(String.format("%.2f", mediaEspera)).append(" turnos\n");
-        } else {
-            sb.append("Tempo médio de espera: N/A\n");
+            log.append("Estação ").append(estacao.getId())
+                    .append(": ").append(numCaminhoes).append(" caminhão(ões) grande(s)\n");
         }
-        return sb.toString();
+
+        log.append("Total de caminhões grandes necessários: ").append(totalCaminhoesGrandes).append("\n");
+
+        log.append("\n=== LIXO RESTANTE NAS ZONAS ===\n");
+        for (int i = 0; i < zonas.tamanho(); i++) {
+            Zona zona = zonas.obter(i);
+            log.append("Zona ").append(zona.getNome())
+                    .append(": ").append(zona.getLixoDisponivel()).append("kg\n");
+        }
+        log.append("\n=== RESPOSTA À PERGUNTA PRINCIPAL ===\n");
+        log.append("Quantos caminhões de 20 toneladas no mínimo o município deverá possuir?\n");
+        log.append("RESPOSTA: ").append(totalCaminhoesGrandes).append(" caminhões de 20 toneladas\n");
+        log.append("Esta quantidade foi determinada pela simulação baseada na demanda real de coleta.\n");
+    }
+
+    public int getTurnoAtual() { return turnoAtual; }
+    public int getTotalLixoColetado() { return totalLixoColetado; }
+    public int getTotalDescarregamentos() { return totalDescarregamentos; }
+    public double getTempoMedioEspera() { return tempoMedioEspera; }
+    public String getLog() { return log.toString(); }
+    public Lista<Zona> getZonas() { return zonas; }
+    public Lista<CaminhaoPequeno> getCaminhoesPequenos() { return caminhoesPequenos; }
+    public Lista<EstacaoTransferencia> getEstacoes() { return estacoes; }
+
+    public int getTotalCaminhoesGrandes() {
+        int total = 0;
+        for (int i = 0; i < estacoes.tamanho(); i++) {
+            total += estacoes.obter(i).getNumCaminhoesGrandes();
+        }
+        return total;
     }
 }
