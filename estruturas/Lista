@@ -1,51 +1,64 @@
-package estruturas;
-import estruturas.No;
+package view.estruturas;
+
+import view.estruturas.*;
 
 public class Lista<T> {
-    private No<T> inicio;
+    private No<T> primeiro;
     private int tamanho;
 
     public Lista() {
-        this.inicio = null;
+        this.primeiro = null;
         this.tamanho = 0;
     }
 
-    public void adicionar(T elemento) {
-        No<T> novo = new No<>(elemento);
-        if (inicio == null) {
-            inicio = novo;
+    public void adicionar(T item) {
+        No<T> novoNo = new No<>(item);
+        if (primeiro == null) {
+            primeiro = novoNo;
         } else {
-            No<T> atual = inicio;
+            No<T> atual = primeiro;
             while (atual.getProximo() != null) {
                 atual = atual.getProximo();
             }
-            atual.setProximo(novo);
+            atual.setProximo(novoNo);
         }
         tamanho++;
     }
 
-    public T get(int indice) {
+    public T obter(int indice) {
         if (indice < 0 || indice >= tamanho) {
-            throw new IndexOutOfBoundsException("Índice inválido.");
+            throw new IndexOutOfBoundsException("Índice inválido: " + indice);
         }
-
-        No<T> atual = inicio;
+        No<T> atual = primeiro;
         for (int i = 0; i < indice; i++) {
             atual = atual.getProximo();
         }
-        return atual.getElemento();
+        return atual.getDado();
     }
 
-    public int tamanho() {
-        return tamanho;
+    public boolean remover(T item) {
+        if (primeiro == null) return false;
+
+        if (primeiro.getDado().equals(item)) {
+            primeiro = primeiro.getProximo();
+            tamanho--;
+            return true;
+        }
+
+        No<T> atual = primeiro;
+        while (atual.getProximo() != null) {
+            if (atual.getProximo().getDado().equals(item)) {
+                atual.setProximo(atual.getProximo().getProximo());
+                tamanho--;
+                return true;
+            }
+            atual = atual.getProximo();
+        }
+        return false;
     }
 
-    public boolean estaVazia() {
-        return tamanho == 0;
-    }
+    public int tamanho() { return tamanho; }
+    public boolean estaVazia() { return tamanho == 0; }
 
-    public void limpar() {
-        inicio = null;
-        tamanho = 0;
-    }
+    public No<T> getPrimeiro() { return primeiro; }
 }
