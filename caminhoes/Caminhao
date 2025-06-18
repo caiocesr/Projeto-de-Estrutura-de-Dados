@@ -14,8 +14,6 @@ public abstract class Caminhao {
     }
 
     public abstract void executarOperacao();
-
-    // Getters e Setters
     public int getId() { return id; }
     public int getCapacidadeMaxima() { return capacidadeMaxima; }
     public int getCargaAtual() { return cargaAtual; }
