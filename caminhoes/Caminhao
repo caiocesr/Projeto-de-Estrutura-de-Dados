@@ -2,46 +2,26 @@ package view.caminhoes;
 
 public abstract class Caminhao {
     protected int id;
-    protected int capacidade;
+    protected int capacidadeMaxima;
     protected int cargaAtual;
+    protected String status;
 
-    public Caminhao(int id, int capacidade) {
+    public Caminhao(int id, int capacidadeMaxima) {
         this.id = id;
-        this.capacidade = capacidade;
+        this.capacidadeMaxima = capacidadeMaxima;
         this.cargaAtual = 0;
+        this.status = "Disponível";
     }
 
-    public void carregar(int quantidade) {
-        cargaAtual += quantidade;
-        if (cargaAtual > capacidade) {
-            cargaAtual = capacidade;
-        }
-    }
+    public abstract void executarOperacao();
 
-    public void descarregar() {
-        cargaAtual = 0;
-    }
-
-    public boolean estaCheio() {
-        return cargaAtual >= capacidade;
-    }
-
-    public int getCargaAtual() {
-        return cargaAtual;
-    }
-
-    public int getCapacidade() {
-        return capacidade;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public abstract String getTipo();
-
-    @Override
-    public String toString() {
-        return getTipo() + " #" + id + " | Carga: " + cargaAtual + "/" + capacidade;
-    }
+    // Getters e Setters
+    public int getId() { return id; }
+    public int getCapacidadeMaxima() { return capacidadeMaxima; }
+    public int getCargaAtual() { return cargaAtual; }
+    public void setCargaAtual(int cargaAtual) { this.cargaAtual = cargaAtual; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public boolean estaLotado() { return cargaAtual >= capacidadeMaxima; }
+    public boolean estaVazio() { return cargaAtual == 0; }
 }
