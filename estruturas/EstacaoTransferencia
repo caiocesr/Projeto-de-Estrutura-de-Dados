@@ -1,59 +1,95 @@
 package view.estruturas;
 
-import estruturas.Fila;
-import view.Simulador;
-import view.caminhoes.CaminhaoGrande;
-import view.caminhoes.CaminhaoPequeno;
+import view.caminhoes.*;
 
 public class EstacaoTransferencia {
     private int id;
-    private Fila<CaminhaoPequeno> filaCaminhoes;
-    private CaminhaoGrande caminhaoGrandeAtual;
+    private Fila<CaminhaoPequeno> filaDescarregamento;
+    private Lista<CaminhaoGrande> caminhoesGrandes;
+    private int tempoMaximoEspera;
+    private int totalDescarregamentos;
 
-    public EstacaoTransferencia(int id) {
+    public EstacaoTransferencia(int id, int tempoMaximoEspera) {
         this.id = id;
-        this.filaCaminhoes = new Fila<>();
-        this.caminhaoGrandeAtual = null;
+        this.filaDescarregamento = new Fila<>();
+        this.caminhoesGrandes = new Lista<>();
+        this.tempoMaximoEspera = tempoMaximoEspera;
+        this.totalDescarregamentos = 0;
+
+        adicionarCaminhaoGrande();
     }
 
-    public void adicionarCaminhaoPequeno(CaminhaoPequeno caminhao) {
-        filaCaminhoes.enfileirar(caminhao);
+    public void adicionarCaminhaoParaDescarregar(CaminhaoPequeno caminhao) {
+        filaDescarregamento.enfileirar(caminhao);
+        caminhao.setStatus("Na fila da estação");
     }
 
-    public void processar(Simulador controller) {
-        if (caminhaoGrandeAtual == null) {
-            caminhaoGrandeAtual = new CaminhaoGrande(id, 3);
-            controller.registrarNovoCaminhaoGrande();
-        } else {
-            caminhaoGrandeAtual.incrementarEspera();
+    public void processarDescarregamento() {
+        if (!filaDescarregamento.estaVazia()) {
+            No<CaminhaoPequeno> atual = filaDescarregamento.getPrimeiro();
+            while (atual != null) {
+                atual.getDado().incrementarTempoEspera();
+                atual = atual.getProximo();
+            }
+
+            CaminhaoPequeno caminhao = filaDescarregamento.frente();
+            CaminhaoGrande caminhaoGrande = encontrarCaminhaoGrandeDisponivel();
+
+            if (caminhaoGrande != null) {
+                int cargaTransferida = Math.min(caminhao.getCargaAtual(),
+                        caminhaoGrande.getCapacidadeMaxima() - caminhaoGrande.getCargaAtual());
+
+                caminhaoGrande.receberCarga(cargaTransferida);
+                caminhao.setCargaAtual(0);
+                caminhao.setStatus("Retornando para coleta");
+
+                filaDescarregamento.desenfileirar();
+                totalDescarregamentos++;
+            }
+
+            if (tempoEsperaMuitoAlto()) {
+                adicionarCaminhaoGrande();
+            }
         }
 
-        if (!filaCaminhoes.estaVazia()) {
-            CaminhaoPequeno pequeno = filaCaminhoes.desenfileirar();
-            caminhaoGrandeAtual.carregar(pequeno.getCargaAtual());
-            controller.registrarTempoEspera(caminhaoGrandeAtual.getTempoEspera());
-            pequeno.descarregar();
-        }
-
-        if (caminhaoGrandeAtual.passouTolerancia() || caminhaoGrandeAtual.estaCheio()) {
-            System.out.println("Caminhão Grande #" + caminhaoGrandeAtual.getId() + " partiu para o aterro com "
-                    + caminhaoGrandeAtual.getCargaAtual() + "kg de lixo.");
-            controller.registrarDescarregamento();
-            caminhaoGrandeAtual = null;
+        for (int i = 0; i < caminhoesGrandes.tamanho(); i++) {
+            CaminhaoGrande caminhao = caminhoesGrandes.obter(i);
+            caminhao.executarOperacao();
         }
     }
 
-
-    public int getId() {
-        return id;
+    private CaminhaoGrande encontrarCaminhaoGrandeDisponivel() {
+        for (int i = 0; i < caminhoesGrandes.tamanho(); i++) {
+            CaminhaoGrande caminhao = caminhoesGrandes.obter(i);
+            if (caminhao.isEstaNaEstacao() && !caminhao.estaLotado()) {
+                return caminhao;
+            }
+        }
+        return null;
     }
 
-    public boolean temFila() {
-        return !filaCaminhoes.estaVazia();
+    private boolean tempoEsperaMuitoAlto() {
+        if (filaDescarregamento.estaVazia()) return false;
+
+        No<CaminhaoPequeno> atual = filaDescarregamento.getPrimeiro();
+        while (atual != null) {
+            if (atual.getDado().getTempoEspera() > tempoMaximoEspera) {
+                return true;
+            }
+            atual = atual.getProximo();
+        }
+        return false;
     }
 
-    @Override
-    public String toString() {
-        return "Estação #" + id + " | Fila de Caminhões Pequenos: " + filaCaminhoes.tamanho();
+    private void adicionarCaminhaoGrande() {
+        int novoId = caminhoesGrandes.tamanho() + 1;
+        CaminhaoGrande novoCaminhao = new CaminhaoGrande(novoId, 3); // Tolerância de 3 turnos
+        caminhoesGrandes.adicionar(novoCaminhao);
     }
+
+    public int getId() { return id; }
+    public int getTamanhoFila() { return filaDescarregamento.tamanho(); }
+    public int getNumCaminhoesGrandes() { return caminhoesGrandes.tamanho(); }
+    public int getTotalDescarregamentos() { return totalDescarregamentos; }
+    public Lista<CaminhaoGrande> getCaminhoesGrandes() { return caminhoesGrandes; }
 }
